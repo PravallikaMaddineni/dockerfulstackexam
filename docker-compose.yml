@@ -1,3 +1,5 @@
+version: "3.9"
+
 services:
   mysqldb:
     image: mysql:8
@@ -6,9 +8,15 @@ services:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: projectdb
     ports:
-      - "3307:3306"
+      - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
 
   backend:
     image: pravallikamaddineni/dockerexam-backend:latest
@@ -16,8 +24,18 @@ services:
     ports:
       - "2000:2000"
     depends_on:
-      - mysqldb
+      mysqldb:
+        condition: service_healthy
     restart: on-failure
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysqldb:3306/projectdb
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: com.mysql.cj.jdbc.Driver
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_SHOW_SQL: "true"
+      SPRING_JPA_PROPERTIES_HIBERNATE_FORMAT_SQL: "true"
+      SPRING_JPA_DATABASE_PLATFORM: org.hibernate.dialect.MySQLDialect
 
   frontend:
     image: pravallikamaddineni/dockerexam-frontend:latest
@@ -27,6 +45,8 @@ services:
     depends_on:
       - backend
     restart: on-failure
+    environment:
+      VITE_API_URL: http://localhost:2000
 
 volumes:
   mysql_data:
