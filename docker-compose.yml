@@ -14,7 +14,7 @@ services:
     image: pravallikamaddineni/dockerexam-backend:latest
     container_name: springboot
     ports:
-      - "2025:2020"
+      - "2000:2000"
     depends_on:
       - mysqldb
     restart: on-failure
